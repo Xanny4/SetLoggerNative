@@ -5,12 +5,14 @@ import { View, FlatList, StyleSheet } from 'react-native';
 import { Text, TextInput, Button, Card, Modal, Portal, Provider } from 'react-native-paper';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { RootStackParamList } from '../screens/types';
+import { getExercises } from '../utils/api';
 
 type ExercisesScreenNavigationProp = BottomTabNavigationProp<RootStackParamList, 'Exercises'>;
 
 interface Exercise {
   id: string;
   name: string;
+  //image: string
 }
 
 interface ExercisesScreenProps {
@@ -25,16 +27,10 @@ const ExercisesScreen: React.FC<ExercisesScreenProps> = ({ navigation }) => {
   const [newExerciseName, setNewExerciseName] = useState('');
 
   useEffect(() => {
-    // Fetch exercises from the database (mock data here)
     const fetchExercises = async () => {
-      // Replace with your data fetching logic
-      const fetchedExercises = [
-        { id: '1', name: 'Bench Press' },
-        { id: '2', name: 'Squat' },
-        { id: '3', name: 'Deadlift' },
-      ];
-      setExercises(fetchedExercises);
-      setFilteredExercises(fetchedExercises);
+      const exercises = await getExercises();
+      setExercises(exercises);
+      setFilteredExercises(exercises);
     };
 
     fetchExercises();

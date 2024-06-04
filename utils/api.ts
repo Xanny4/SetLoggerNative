@@ -13,6 +13,11 @@ type AuthenticateResponse = {
   token: string;
 };
 
+type CreateUserResponse = {
+  user: any;
+  message: string;
+}
+
 const API_URL = process.env.API_URL;
 
 const getToken = async (): Promise<string> => {
@@ -214,3 +219,22 @@ export const authenticateUser = async (email: string, password: string): Promise
     throw error;
   }
 };
+
+export const createUser = async (username: string, email: string, password: string): Promise<CreateUserResponse | undefined> => {
+  try {
+    const response = await axios.post<CreateUserResponse>(`${API_URL}/users/`, {
+      username,
+      email,
+      password,
+    });
+    return response.data;
+  } catch (error: any) {
+    if (error.response?.status === 401) {
+      console.error('Creating User failed:', error.response.data.message);
+    } else {
+      console.error('Error Creating user:', error);
+    }
+    throw error;
+  }
+};
+

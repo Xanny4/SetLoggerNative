@@ -41,35 +41,35 @@ const ProfileScreen: React.FC = () => {
   };
 
   const handleConfirmSave = async () => {
-    // const passwordConfirmed = await confirmPassword(password);
+    const passwordConfirmed = await confirmPassword(password);
 
-    // if (!passwordConfirmed) {
-    //   setErrorMessages((prevErrors) => ({
-    //     ...prevErrors,
-    //     password: 'Password is incorrect',
-    //   }));
-    //   return;
-    // }
+    if (!passwordConfirmed) {
+      setErrorMessages((prevErrors) => ({
+        ...prevErrors,
+        password: 'Password is incorrect',
+      }));
+      return;
+    }
 
-    // const response = await modifyUser(newUsername, newEmail);
-    // if (response.user) {
-    //   setUsername(newUsername);
-    //   setEmail(newEmail);
-    //   setEditMode(false);
-    // } else {
-    //   if (response.errors.username) {
-    //     setErrorMessages((prevErrors) => ({
-    //       ...prevErrors,
-    //       username: 'Username is already taken',
-    //     }));
-    //   }
-    //   if (response.errors.email) {
-    //     setErrorMessages((prevErrors) => ({
-    //       ...prevErrors,
-    //       email: 'Email is already in use',
-    //     }));
-    //   }
-    // }
+    const response = await modifyUser(newUsername, newEmail);
+    if (response.user) {
+      setUsername(newUsername);
+      setEmail(newEmail);
+      setEditMode(false);
+    } else {
+      if (response.errors.username) {
+        setErrorMessages((prevErrors) => ({
+          ...prevErrors,
+          username: 'Username is already taken',
+        }));
+      }
+      if (response.errors.email) {
+        setErrorMessages((prevErrors) => ({
+          ...prevErrors,
+          email: 'Email is already in use',
+        }));
+      }
+    }
 
     setOpenEditDialog(false);
     setPassword('');

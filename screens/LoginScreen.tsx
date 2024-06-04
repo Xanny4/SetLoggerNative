@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { TextInput, Button, Card } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { authenticateUser } from '../utils/api'; // Adjust the import path as necessary
+import { authenticateUser, createUser } from '../utils/api';
 
 interface LoginScreenProps {
   onLoginSuccess: () => void;
@@ -47,12 +47,18 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
       setErrorMessage('Passwords do not match');
       return;
     }
-    // Your signup logic goes here
-    console.log('Signing up with username:', username, 'and password:', password);
-    // Save the token in async storage after successful signup
-    await AsyncStorage.setItem('userToken', 'dummy-token');
-    // Navigate to the main app screen
-    // navigation.replace('Home');
+    try {
+      const response = await createUser(username, email, password);
+      if (response.user) {
+        setSuccessMessage("Signed up successfully!");
+        setIsSignup(false);
+      }
+      else
+        setErrorMessage(response.message);
+    }
+    catch (error: any) {
+      setErrorMessage(error.response?.data?.message || 'An error occurred during login.');
+    }
   };
 
   return (
