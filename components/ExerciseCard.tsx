@@ -1,8 +1,8 @@
 import React from 'react';
-import { TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { TouchableOpacity, StyleSheet } from 'react-native';
 import { Card, Title, Paragraph } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
-import { Exercise, RootStackParamList } from '../types'; // Ensure consistent type import
+import { Exercise, RootStackParamList } from '../types';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 
 type ExerciseCardNavigationProp = BottomTabNavigationProp<RootStackParamList, 'YourSets'>;

@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createStackNavigator } from '@react-navigation/stack';
 import LoginScreen from './screens/LoginScreen';
 import AddSetScreen from './screens/AddSetScreen';
 import ExercisesScreen from './screens/ExercisesScreen';
 import ProfileScreen from './screens/ProfileScreen';
-import YourSetsScreen from './screens/YourSetsScreens'; // Correct the import if typo
+import YourSetsScreen from './screens/YourSetsScreen'; // Corrected import
 
 import { MaterialIcons } from '@expo/vector-icons';
 import { PaperProvider } from 'react-native-paper';
@@ -13,6 +14,16 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NavigationContainer } from '@react-navigation/native';
 
 const Tab = createBottomTabNavigator();
+const Stack = createStackNavigator();
+
+// Stack Navigator for Exercises Tab
+const ExercisesStack = () => (
+  <Stack.Navigator>
+    <Stack.Screen name="Exercises" component={ExercisesScreen} options={{ headerShown: false }} />
+    <Stack.Screen name="YourSets" component={YourSetsScreen} options={{title: ""}}/>
+    {/* Add more screens as needed */}
+  </Stack.Navigator>
+);
 
 const BottomNavigationBar: React.FC = () => {
   return (
@@ -29,7 +40,7 @@ const BottomNavigationBar: React.FC = () => {
           } else if (route.name === 'Profile') {
             iconName = 'person';
           } else if (route.name === 'YourSets') {
-            iconName = 'fitness-center';
+            iconName = 'list'; // Changed icon for YourSetsScreen
           }
 
           return <MaterialIcons name={iconName} size={size} color={color} />;
@@ -37,14 +48,15 @@ const BottomNavigationBar: React.FC = () => {
       })}
     >
       <Tab.Screen name="AddSet" component={AddSetScreen} options={{ title: 'Add Set' }} />
-      <Tab.Screen name="Exercises" component={ExercisesScreen} options={{ title: 'Exercises' }} />
+      <Tab.Screen name="Exercises" component={ExercisesStack} options={{ title: 'Exercises' }} />
+      <Tab.Screen name="YourSets" component={YourSetsScreen} options={{ title: 'Your Sets' }} />
       <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: 'Profile' }} />
-      <Tab.Screen name="YourSets" component={YourSetsScreen} options={{ title: 'Your Sets' } } />
+      {/* Tab.Screen for YourSetsScreen will be handled within ExercisesStack */}
     </Tab.Navigator>
   );
 };
 
-const App = () => {
+const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [userToken, setUserToken] = useState<string | null>(null);
 
@@ -61,7 +73,7 @@ const App = () => {
 
   useEffect(() => {
     checkLoginStatus();
-    const intervalId = setInterval(checkLoginStatus, 1000); // Check every 5 seconds
+    const intervalId = setInterval(checkLoginStatus, 5000); // Check every 5 seconds
     return () => clearInterval(intervalId); // Clear the interval when the component unmounts
   }, []);
 

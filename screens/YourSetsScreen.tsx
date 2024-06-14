@@ -2,31 +2,33 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Appbar, FAB } from 'react-native-paper';
 import SetsTable from '../components/SetsTable'; // Adjust the path as necessary
-import { useNavigation } from '@react-navigation/native';
+import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import { useNavigation, RouteProp } from '@react-navigation/native';
+import { RootStackParamList } from '../types';
 
-interface YourSetsScreenProps {
-  exerciseId: string;
+type YourSetsScreenRouteProp = RouteProp<RootStackParamList, 'YourSets'>;
+type YourSetsScreenNavigationProp = BottomTabNavigationProp<RootStackParamList, 'YourSets'>;
+
+interface Props {
+  route: YourSetsScreenRouteProp;
+  navigation: YourSetsScreenNavigationProp;
 }
 
-const YourSetsScreen: React.FC<YourSetsScreenProps> = ({exerciseId}) => {
-  //const { exerciseId } = route.params || {}; // Destructure with fallback
+const YourSetsScreen: React.FC<Props> = ({ route, navigation }) => {
+  const { exerciseId } = route.params || {};
 
   // Debugging log to check if exerciseId is being passed correctly
   console.log('exerciseId:', exerciseId);
-  const navigation = useNavigation();
+
   return (
     <View style={styles.container}>
-      <Appbar.Header>
-        <Appbar.BackAction onPress={() => navigation.goBack()} />
-        <Appbar.Content title="Your Sets" />
-      </Appbar.Header>
       <View style={styles.content}>
-        <SetsTable exercise={exerciseId} />
+        <SetsTable exerciseId={exerciseId} />
       </View>
       <FAB
         style={styles.fab}
         icon="plus"
-        //onPress={() => navigation.navigate('AddSet', { exerciseId })}
+        onPress={() => navigation.navigate('AddSet')}
       />
     </View>
   );

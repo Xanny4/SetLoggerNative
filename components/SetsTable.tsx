@@ -3,39 +3,20 @@ import { View, Text, StyleSheet, ScrollView, Image, ActivityIndicator } from 're
 import { TextInput, DataTable, IconButton, Snackbar } from 'react-native-paper';
 import { getSets, getExercises, deleteSet } from '../utils/api';
 
-// Custom Pagination Component
-const CustomPagination = ({ currentPage, totalPages, onPageChange }) => {
-  const pages = Array.from({ length: totalPages }, (_, index) => index + 1);
-
-  return (
-    <View style={styles.paginationContainer}>
-      {pages.map((page) => (
-        <Text
-          key={page}
-          style={[styles.pageNumber, page === currentPage && styles.currentPage]}
-          onPress={() => onPageChange(page)}
-        >
-          {page}
-        </Text>
-      ))}
-    </View>
-  );
-};
-
-const SetsTable = ({ exercise }: { exercise?: string }) => {
-  const [sets, setSets] = useState<any[]>([]);
+const SetsTable = ({ exerciseId }) => {
+  const [sets, setSets] = useState([]);
   const [loading, setLoading] = useState(false);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [exercisesData, setExercisesData] = useState<any[]>([]);
-  const [selectedExercise, setSelectedExercise] = useState<any | null>(null);
+  const [exercisesData, setExercisesData] = useState([]);
+  const [selectedExercise, setSelectedExercise] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
-  const [sortCriteria, setSortCriteria] = useState<string>('');
-  const [sortOrder, setSortOrder] = useState<string>('desc');
+  const [sortCriteria, setSortCriteria] = useState('');
+  const [sortOrder, setSortOrder] = useState('desc');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -52,25 +33,25 @@ const SetsTable = ({ exercise }: { exercise?: string }) => {
   useEffect(() => {
     fetchSets();
     setConfirmDelete(false);
-  }, [exercise, sortCriteria, sortOrder, startDate, endDate, page, confirmDelete]);
+  }, [exerciseId, sortCriteria, sortOrder, startDate, endDate, page, confirmDelete]);
 
-  const findExerciseById = (exerciseId: string) => {
-    return exercisesData.find((exercise) => exercise?._id === exerciseId);
+  const findExerciseById = (id) => {
+    return exercisesData.find((exercise) => exercise?._id === id);
   };
 
   useEffect(() => {
-    if (exercise) {
-      setSelectedExercise(findExerciseById(exercise));
+    if (exerciseId) {
+      setSelectedExercise(findExerciseById(exerciseId));
     } else {
       setSelectedExercise(null);
     }
-  }, [exercise, exercisesData]);
+  }, [exerciseId, exercisesData]);
 
   const fetchSets = async () => {
     setLoading(true);
     try {
       const { sets, totalPages } = await getSets(
-        exercise,
+        exerciseId,
         startDate,
         endDate,
         sortCriteria,
@@ -86,7 +67,7 @@ const SetsTable = ({ exercise }: { exercise?: string }) => {
     }
   };
 
-  const handleDelete = async (setId: string) => {
+  const handleDelete = async (setId) => {
     try {
       await deleteSet(setId);
       setConfirmDelete(true);
@@ -99,7 +80,7 @@ const SetsTable = ({ exercise }: { exercise?: string }) => {
     }
   };
 
-  const handleSort = (criteria: string) => {
+  const handleSort = (criteria) => {
     if (sortCriteria === criteria) {
       setSortOrder((prevOrder) => (prevOrder === 'asc' ? 'desc' : 'asc'));
     } else {
@@ -108,7 +89,7 @@ const SetsTable = ({ exercise }: { exercise?: string }) => {
     }
   };
 
-  const handlePagination = (pageNumber: number) => {
+  const handlePageChange = (pageNumber) => {
     setPage(pageNumber);
   };
 
@@ -146,57 +127,40 @@ const SetsTable = ({ exercise }: { exercise?: string }) => {
       {loading ? (
         <ActivityIndicator size="large" color="#0000ff" />
       ) : (
-        <ScrollView horizontal>
-          <DataTable>
+        <ScrollView horizontal={false}>
+          <DataTable style={styles.dataTable}>
             <DataTable.Header>
-              {!exercise && (
-                <DataTable.Title>
-                  <Text style={styles.headerText}>Exercise</Text>
-                </DataTable.Title>
-              )}
-              <DataTable.Title onPress={() => handleSort('reps')}>
-                <Text style={styles.headerText}>Reps</Text>
-              </DataTable.Title>
-              <DataTable.Title onPress={() => handleSort('weight')}>
-                <Text style={styles.headerText}>Weight (kg)</Text>
-              </DataTable.Title>
-              <DataTable.Title onPress={() => handleSort('createdAt')}>
-                <Text style={styles.headerText}>Date</Text>
-              </DataTable.Title>
-              <DataTable.Title>
-                <Text style={styles.headerText}>Actions</Text>
-              </DataTable.Title>
+              {!exerciseId && (<DataTable.Title>Exercise</DataTable.Title>)}
+              <DataTable.Title onPress={() => handleSort('reps')}>Reps</DataTable.Title>
+              <DataTable.Title onPress={() => handleSort('weight')}>Weight (kg)</DataTable.Title>
+              <DataTable.Title onPress={() => handleSort('createdAt')}>Date</DataTable.Title>
+              <DataTable.Title>Actions</DataTable.Title>
             </DataTable.Header>
             {sets.map((set) => {
               const ex = findExerciseById(set.exercise);
               return (
                 <DataTable.Row key={set._id}>
-                  {!exercise && (
+                  {!exerciseId && (
                     <DataTable.Cell>
-                      <Text>{ex?.name}</Text>
-                      {ex?.imageURL && (
-                        <Image
-                          source={{ uri: ex?.imageURL }}
-                          style={styles.exerciseImage}
-                        />
-                      )}
+                      <View>
+                        {ex?.imageURL && (
+                          <Image
+                            source={{ uri: ex?.imageURL }}
+                            style={styles.miniExerciseImage}
+                          />
+                        )}
+                        <Text>{ex?.name}</Text>
+                      </View>
                     </DataTable.Cell>
                   )}
-                  <DataTable.Cell>
-                    <Text>{set.reps}</Text>
-                  </DataTable.Cell>
-                  <DataTable.Cell>
-                    <Text>{set.weight}</Text>
-                  </DataTable.Cell>
-                  <DataTable.Cell>
-                    <Text>{new Date(set.createdAt).toLocaleDateString()}</Text>
-                  </DataTable.Cell>
+                  <DataTable.Cell>{set.reps || '-'}</DataTable.Cell>
+                  <DataTable.Cell>{set.weight || '-'}</DataTable.Cell>
+                  <DataTable.Cell>{new Date(set.createdAt).toLocaleDateString()}</DataTable.Cell>
                   <DataTable.Cell>
                     <IconButton
                       icon="delete"
-                      iconColor="red"
-                      size={20}
                       onPress={() => handleDelete(set._id)}
+                      size={20}
                     />
                   </DataTable.Cell>
                 </DataTable.Row>
@@ -205,10 +169,13 @@ const SetsTable = ({ exercise }: { exercise?: string }) => {
           </DataTable>
         </ScrollView>
       )}
-      <CustomPagination
-        currentPage={page}
-        totalPages={totalPages}
-        onPageChange={handlePagination}
+      <DataTable.Pagination
+        page={page}
+        numberOfPages={totalPages}
+        onPageChange={handlePageChange}
+        label={`Page ${page} of ${totalPages}`}
+        showFastPaginationControls
+        numberOfItemsPerPage={5}
       />
       <Snackbar
         visible={snackbarVisible}
@@ -243,6 +210,16 @@ const styles = StyleSheet.create({
     resizeMode: 'cover',
     marginBottom: 10,
   },
+  miniExerciseImage: {
+    width: 40,
+    height: 40,
+    resizeMode: 'cover',
+    marginRight: 10,
+  },
+  exerciseInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   datePickerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -257,20 +234,19 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
   },
-  paginationContainer: {
-    flexDirection: 'row',
+  headerCell: {
     justifyContent: 'center',
-    alignItems: 'center',
+  },
+  dataCell: {
+    justifyContent: 'center',
+  },
+  dataTable: {
+    flex: 1,
+    marginBottom: 20,
     marginTop: 10,
   },
-  pageNumber: {
-    margin: 5,
-    fontSize: 16,
-    color: 'blue',
-  },
-  currentPage: {
-    fontWeight: 'bold',
-    color: 'red',
+  flex1: {
+    flex: 1,
   },
 });
 
