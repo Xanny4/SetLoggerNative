@@ -1,36 +1,38 @@
-// ExercisesScreen.tsx
-
 import React, { useState, useEffect } from 'react';
-import { View, FlatList, StyleSheet } from 'react-native';
-import { Text, TextInput, Button, Card, Modal, Portal, Provider } from 'react-native-paper';
+import { View, FlatList, StyleSheet, Image, Alert } from 'react-native';
+import { TextInput, Button, Card, Modal, Portal, Provider } from 'react-native-paper';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
-import { RootStackParamList } from '../screens/types';
-import { getExercises } from '../utils/api';
+import * as ImagePicker from 'expo-image-picker';
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { getExercises, createExercise } from '../utils/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { FirebaseError } from 'firebase/app';
+import ExerciseCard from '../components/ExerciseCard';
+import { useNavigation } from '@react-navigation/native';
+import { RootStackParamList, Exercise } from '../types'; 
+import { storage } from '../utils/firebaseConfig';
 
 type ExercisesScreenNavigationProp = BottomTabNavigationProp<RootStackParamList, 'Exercises'>;
 
-interface Exercise {
-  id: string;
-  name: string;
-  //image: string
-}
-
-interface ExercisesScreenProps {
-  navigation: ExercisesScreenNavigationProp;
-}
-
-const ExercisesScreen: React.FC<ExercisesScreenProps> = ({ navigation }) => {
+const ExercisesScreen: React.FC = () => {
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [filteredExercises, setFilteredExercises] = useState<Exercise[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [newExerciseName, setNewExerciseName] = useState('');
+  const [newExerciseImage, setNewExerciseImage] = useState<string | null>(null);
+
+  const navigation = useNavigation<ExercisesScreenNavigationProp>();
 
   useEffect(() => {
     const fetchExercises = async () => {
-      const exercises = await getExercises();
-      setExercises(exercises);
-      setFilteredExercises(exercises);
+      try {
+        const exercises: Exercise[] = await getExercises();
+        setExercises(exercises);
+        setFilteredExercises(exercises);
+      } catch (error) {
+        console.error('Error fetching exercises:', error);
+      }
     };
 
     fetchExercises();
@@ -44,12 +46,58 @@ const ExercisesScreen: React.FC<ExercisesScreenProps> = ({ navigation }) => {
     setFilteredExercises(filtered);
   };
 
-  const handleAddExercise = () => {
-    const newExercise = { id: Date.now().toString(), name: newExerciseName };
-    setExercises([...exercises, newExercise]);
-    setFilteredExercises([...exercises, newExercise]);
-    setNewExerciseName('');
-    setIsModalVisible(false);
+  const handleAddExercise = async () => {
+    const imageURL = await uploadImage(newExerciseImage);
+    if (imageURL) {
+      const newExercise = await createExercise({ name: newExerciseName, imageURL: imageURL });
+      setExercises([...exercises, newExercise]);
+      setFilteredExercises([...exercises, newExercise]);
+      setNewExerciseName('');
+      setNewExerciseImage(null);
+      setIsModalVisible(false);
+    } else {
+      Alert.alert('Error', 'Failed to upload image');
+    }
+  };
+
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      setNewExerciseImage(result.assets[0].uri);
+    }
+  };
+
+  const uploadImage = async (uri: string | null): Promise<string | null> => {
+    if (!uri) return null;
+
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) {
+        console.error("User is not authenticated");
+        return null;
+      }
+      const response = await fetch(uri);
+      const blob = await response.blob();
+      const storageRef = ref(storage, `images/${Date.now()}`);
+      await uploadBytes(storageRef, blob);
+      const downloadURL = await getDownloadURL(storageRef);
+      return downloadURL;
+    } catch (error: any) {
+      if (error.code === 'auth/network-request-failed') {
+        console.error("Network request failed. Please check your connection.");
+      } else if (error instanceof FirebaseError) {
+        console.error("Firebase Storage Error:", error.code, error.message, error.customData);
+      } else {
+        console.error("Unknown Error uploading image:", error);
+      }
+      return null;
+    }
   };
 
   return (
@@ -73,12 +121,10 @@ const ExercisesScreen: React.FC<ExercisesScreenProps> = ({ navigation }) => {
         </View>
         <FlatList
           data={filteredExercises}
-          keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
-            <Card style={styles.card}>
-              <Card.Title title={item.name} />
-            </Card>
+            <ExerciseCard exercise={item} />
           )}
+          keyExtractor={(item) => item._id}
         />
         <Portal>
           <Modal visible={isModalVisible} onDismiss={() => setIsModalVisible(false)} contentContainerStyle={styles.modalContainer}>
@@ -91,6 +137,10 @@ const ExercisesScreen: React.FC<ExercisesScreenProps> = ({ navigation }) => {
                   onChangeText={setNewExerciseName}
                   style={styles.input}
                 />
+                <Button mode="contained" onPress={pickImage} style={styles.imageButton}>
+                  Pick an image
+                </Button>
+                {newExerciseImage && <Image source={{ uri: newExerciseImage }} style={styles.imagePreview} />}
                 <Button mode="contained" onPress={handleAddExercise} style={styles.saveButton}>
                   Save
                 </Button>
@@ -119,9 +169,6 @@ const styles = StyleSheet.create({
   addButton: {
     alignSelf: 'center',
   },
-  card: {
-    marginBottom: 10,
-  },
   modalContainer: {
     padding: 20,
     justifyContent: 'center',
@@ -130,6 +177,14 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   input: {
+    marginBottom: 20,
+  },
+  imageButton: {
+    marginBottom: 20,
+  },
+  imagePreview: {
+    width: 100,
+    height: 100,
     marginBottom: 20,
   },
   saveButton: {

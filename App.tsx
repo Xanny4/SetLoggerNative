@@ -5,11 +5,13 @@ import LoginScreen from './screens/LoginScreen';
 import AddSetScreen from './screens/AddSetScreen';
 import ExercisesScreen from './screens/ExercisesScreen';
 import ProfileScreen from './screens/ProfileScreen';
+import YourSetsScreen from './screens/YourSetsScreens'; // Correct the import if typo
+
 import { MaterialIcons } from '@expo/vector-icons';
 import { PaperProvider } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NavigationContainer } from '@react-navigation/native';
-  
+
 const Tab = createBottomTabNavigator();
 
 const BottomNavigationBar: React.FC = () => {
@@ -26,6 +28,8 @@ const BottomNavigationBar: React.FC = () => {
             iconName = 'fitness-center';
           } else if (route.name === 'Profile') {
             iconName = 'person';
+          } else if (route.name === 'YourSets') {
+            iconName = 'fitness-center';
           }
 
           return <MaterialIcons name={iconName} size={size} color={color} />;
@@ -35,6 +39,7 @@ const BottomNavigationBar: React.FC = () => {
       <Tab.Screen name="AddSet" component={AddSetScreen} options={{ title: 'Add Set' }} />
       <Tab.Screen name="Exercises" component={ExercisesScreen} options={{ title: 'Exercises' }} />
       <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: 'Profile' }} />
+      <Tab.Screen name="YourSets" component={YourSetsScreen} options={{ title: 'Your Sets' } } />
     </Tab.Navigator>
   );
 };
@@ -56,7 +61,7 @@ const App = () => {
 
   useEffect(() => {
     checkLoginStatus();
-    const intervalId = setInterval(checkLoginStatus, 5000); // Check every 5 seconds
+    const intervalId = setInterval(checkLoginStatus, 1000); // Check every 5 seconds
     return () => clearInterval(intervalId); // Clear the interval when the component unmounts
   }, []);
 
@@ -70,13 +75,13 @@ const App = () => {
 
   return (
     <NavigationContainer>
-    <PaperProvider>
-      {userToken ? (
-        <BottomNavigationBar />
-      ) : (
-        <LoginScreen onLoginSuccess={checkLoginStatus} />
-      )}
-    </PaperProvider>
+      <PaperProvider>
+        {userToken ? (
+          <BottomNavigationBar />
+        ) : (
+          <LoginScreen onLoginSuccess={checkLoginStatus} />
+        )}
+      </PaperProvider>
     </NavigationContainer>
   );
 };

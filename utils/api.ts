@@ -1,12 +1,13 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Exercise } from '../types';
 
-// Define types for the responses and parameters
 type SetResponse = any; // Replace 'any' with the actual type
-type ExerciseResponse = any; // Replace 'any' with the actual type
 type UserResponse = any; // Replace 'any' with the actual type
 type ConfirmPasswordResponse = any; // Replace 'any' with the actual type
-
+type AddSetResponse = {
+  status: any;
+}
 type AuthenticateResponse = {
   user: any; // Replace 'any' with the actual user type
   message: string;
@@ -53,6 +54,30 @@ export const getSets = async (
   }
 };
 
+export const addSet = async (exercise: string, reps: string, weight: string): Promise<AddSetResponse> => {
+  try {
+    const token = await getToken();
+    const response = await axios.post<any>(`${API_URL}/sets/`, {
+      exercise,
+      reps,
+      weight,
+    },
+      {
+        headers: {
+          authorization: token,
+        },
+    });
+    return response;
+  } catch (error: any) {
+    if (error.response?.status === 401) {
+      console.error('Creating Set failed:', error.response.data.message);
+    } else {
+      console.error('Error Creating Set:', error);
+    }
+    throw error;
+  }
+}
+
 export const deleteSet = async (id: string): Promise<void | undefined> => {
   try {
     const token = await getToken();
@@ -74,10 +99,10 @@ export const deleteSet = async (id: string): Promise<void | undefined> => {
   }
 };
 
-export const getExercises = async (): Promise<ExerciseResponse | undefined> => {
+export const getExercises = async (): Promise<Exercise[] | undefined> => {
   try {
     const token = await getToken();
-    const response = await axios.get<ExerciseResponse>(`${API_URL}/exercises/`, {
+    const response = await axios.get<Exercise[]>(`${API_URL}/exercises/`, {
       headers: {
         authorization: token,
       },
@@ -92,10 +117,10 @@ export const getExercises = async (): Promise<ExerciseResponse | undefined> => {
   }
 };
 
-export const createExercise = async (exercise: string): Promise<ExerciseResponse | undefined> => {
+export const createExercise = async (exercise: any): Promise<Exercise | undefined> => {
   try {
     const token = await getToken();
-    const response = await axios.post<ExerciseResponse>(
+    const response = await axios.post<Exercise>(
       `${API_URL}/exercises/`,
       { exercise },
       {
@@ -114,10 +139,10 @@ export const createExercise = async (exercise: string): Promise<ExerciseResponse
   }
 };
 
-export const getExerciseById = async (id: string): Promise<ExerciseResponse | undefined> => {
+export const getExerciseById = async (id: string): Promise<Exercise | undefined> => {
   try {
     const token = await getToken();
-    const response = await axios.get<ExerciseResponse>(
+    const response = await axios.get<Exercise>(
       `${API_URL}/exercises/${id}`,
       {
         headers: {

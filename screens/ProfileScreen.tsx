@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { TextInput, Button, Dialog, Portal, Card, Text } from 'react-native-paper';
 import { getUser, modifyUser, confirmPassword } from '../utils/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const ProfileScreen: React.FC = () => {
   const [username, setUsername] = useState('');
@@ -13,12 +14,13 @@ const ProfileScreen: React.FC = () => {
   const [originalValues, setOriginalValues] = useState({ username: '', email: '' });
   const [password, setPassword] = useState('');
   const [errorMessages, setErrorMessages] = useState({ username: '', email: '', password: '' });
+  const [openLogoutDialog, setOpenLogoutDialog] = useState(false);
 
   useEffect(() => {
     const fetchUserData = async () => {
-    const user = await getUser();
-    setUsername(user.username);
-    setEmail(user.email);
+      const user = await getUser();
+      setUsername(user.username);
+      setEmail(user.email);
     };
     fetchUserData();
   }, []);
@@ -75,6 +77,15 @@ const ProfileScreen: React.FC = () => {
     setPassword('');
   };
 
+  const handleLogoutConfirmation = () => {
+    setOpenLogoutDialog(true);
+  };
+
+  const handleLogout = async () => {
+    setOpenLogoutDialog(false);
+    await AsyncStorage.removeItem('token');
+  };
+
   return (
     <View style={styles.container}>
       <Card style={styles.card}>
@@ -101,6 +112,10 @@ const ProfileScreen: React.FC = () => {
         </Card.Content>
       </Card>
 
+      <Button mode="contained" onPress={handleLogoutConfirmation} style={styles.logoutButton}>
+        Logout
+      </Button>
+
       <Portal>
         <Dialog visible={openEditDialog} onDismiss={() => setOpenEditDialog(false)}>
           <Dialog.Title>Confirm Your Password</Dialog.Title>
@@ -116,6 +131,17 @@ const ProfileScreen: React.FC = () => {
           <Dialog.Actions>
             <Button onPress={() => setOpenEditDialog(false)}>Cancel</Button>
             <Button onPress={handleConfirmSave}>Save Changes</Button>
+          </Dialog.Actions>
+        </Dialog>
+
+        <Dialog visible={openLogoutDialog} onDismiss={() => setOpenLogoutDialog(false)}>
+          <Dialog.Title>Confirm Logout</Dialog.Title>
+          <Dialog.Content>
+            <Text>Are you sure you want to log out?</Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setOpenLogoutDialog(false)}>Cancel</Button>
+            <Button onPress={handleLogout}>Logout</Button>
           </Dialog.Actions>
         </Dialog>
       </Portal>
@@ -135,6 +161,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: 16,
+  },
+  logoutButton: {
+    marginTop: 20,
   },
 });
 
