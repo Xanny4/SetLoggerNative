@@ -13,6 +13,9 @@ import { PaperProvider } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NavigationContainer } from '@react-navigation/native';
 
+import { SetsContext, SetsProvider } from './context/setsContext';
+
+
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 
@@ -84,6 +87,7 @@ const App: React.FC = () => {
   }
 
   return (
+    <SetsProvider>
     <NavigationContainer>
       <PaperProvider>
         {userToken ? (
@@ -93,6 +97,7 @@ const App: React.FC = () => {
         )}
       </PaperProvider>
     </NavigationContainer>
+    </SetsProvider>
   );
 };
 

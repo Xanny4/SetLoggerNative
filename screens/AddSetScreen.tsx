@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, TextInput as RNTextInput } from 'react-native';
 import { TextInput, Button, Card, Snackbar } from 'react-native-paper';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { RootStackParamList } from '../types';
 import { addSet, getExercises } from '../utils/api';
+import { SetsContext } from '../context/setsContext';
 
 type AddSetScreenNavigationProp = BottomTabNavigationProp<RootStackParamList, 'AddSet'>;
 
@@ -43,6 +44,9 @@ const AddSetScreen: React.FC<AddSetScreenProps> = ({ navigation }) => {
   const [snackbarColor, setSnackbarColor] = useState('#4B0082');
   const [highlightErrors, setHighlightErrors] = useState({ exercise: false, reps: false });
   const [selectedExerciseImage, setSelectedExerciseImage] = useState('');
+
+  const { refreshSets } = useContext(SetsContext);
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -88,6 +92,7 @@ const AddSetScreen: React.FC<AddSetScreenProps> = ({ navigation }) => {
       setSearchQuery('');
       setSelectedExerciseImage('');
       setHighlightErrors({ exercise: false, reps: false });
+      refreshSets(); // Refresh the sets list in YourSetsScreen
     } else {
       setSnackbarMessage('Failed to add set. Try again.');
       setSnackbarColor('#FF0000'); // Red color for error

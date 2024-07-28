@@ -1,43 +1,42 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { View, Text, StyleSheet, ScrollView, Image, ActivityIndicator, TouchableOpacity } from 'react-native';
-import { DataTable, IconButton, Snackbar } from 'react-native-paper';
+import { DataTable, IconButton, Snackbar, Button } from 'react-native-paper';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { getSets, getExercises, deleteSet } from '../utils/api';
+import { getExercises, deleteSet } from '../utils/api';
 import dayjs from 'dayjs';
+import { SetsContext } from '../context/setsContext';
 
 const SetsTable = ({ exerciseId }) => {
-  const [sets, setSets] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [startDate, setStartDate] = useState(null);
-  const [endDate, setEndDate] = useState(null);
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [pickerMode, setPickerMode] = useState('start');
+  const [startDate, setStartDate] = useState(undefined);
+  const [endDate, setEndDate] = useState(undefined);
+  const [showStartDatePicker, setShowStartDatePicker] = useState(false);
+  const [showEndDatePicker, setShowEndDatePicker] = useState(false);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [exercisesData, setExercisesData] = useState([]);
   const [selectedExercise, setSelectedExercise] = useState(null);
-  const [confirmDelete, setConfirmDelete] = useState(false);
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [sortCriteria, setSortCriteria] = useState('createdAt');
   const [sortOrder, setSortOrder] = useState('desc');
 
+  const { sets, totalPages, refreshSets } = useContext(SetsContext);
+
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
       try {
+        await refreshSets(exerciseId, startDate, endDate, sortCriteria, sortOrder, page);
         const exercises = await getExercises();
         setExercisesData(exercises);
       } catch (error) {
-        console.error('Error fetching exercises:', error);
+        console.error('Error fetching data:', error);
+      } finally {
+        setLoading(false);
       }
     };
     fetchData();
-  }, []);
-
-  useEffect(() => {
-    fetchSets();
-    setConfirmDelete(false);
-  }, [exerciseId, sortCriteria, sortOrder, startDate, endDate, page, confirmDelete]);
+  }, [exerciseId, sortCriteria, sortOrder, startDate, endDate, page]);
 
   const findExerciseById = (id) => {
     return exercisesData.find((exercise) => exercise?._id === id);
@@ -51,30 +50,10 @@ const SetsTable = ({ exerciseId }) => {
     }
   }, [exerciseId, exercisesData]);
 
-  const fetchSets = async () => {
-    setLoading(true);
-    try {
-      const { sets, totalPages } = await getSets(
-        exerciseId,
-        startDate ? dayjs(startDate).format('YYYY-MM-DD') : '',
-        endDate ? dayjs(endDate).format('YYYY-MM-DD') : '',
-        sortCriteria,
-        sortOrder,
-        page
-      );
-      setSets(sets);
-      setTotalPages(totalPages);
-    } catch (error) {
-      console.error('Error fetching sets:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleDelete = async (setId) => {
     try {
       await deleteSet(setId);
-      setConfirmDelete(true);
+      refreshSets(exerciseId, startDate, endDate, sortCriteria, sortOrder, page);
       setSnackbarMessage('Set deleted successfully!');
       setSnackbarVisible(true);
     } catch (error) {
@@ -97,28 +76,23 @@ const SetsTable = ({ exerciseId }) => {
     setPage(pageNumber);
   };
 
-  const openDatePicker = (mode) => {
-    setPickerMode(mode);
-    setShowDatePicker(true);
-  };
-
-  const onDateChange = (event, selectedDate) => {
-    setShowDatePicker(false);
+  const onStartDateChange = (event, selectedDate) => {
+    setShowStartDatePicker(false);
     if (selectedDate) {
-      if (pickerMode === 'start') {
-        setStartDate(selectedDate);
-      } else {
-        setEndDate(selectedDate);
-      }
+      setStartDate(selectedDate);
     }
   };
 
-  const clearDate = (mode) => {
-    if (mode === 'start') {
-      setStartDate(null);
-    } else {
-      setEndDate(null);
+  const onEndDateChange = (event, selectedDate) => {
+    setShowEndDatePicker(false);
+    if (selectedDate) {
+      setEndDate(selectedDate);
     }
+  };
+
+  const clearDates = () => {
+    setStartDate(undefined);
+    setEndDate(undefined);
   };
 
   const formattedDate = (date) => {
@@ -139,21 +113,32 @@ const SetsTable = ({ exerciseId }) => {
         </View>
       )}
       <View style={styles.datePickerContainer}>
-        <TouchableOpacity onPress={() => openDatePicker('start')} style={styles.datePickerButton}>
+        <TouchableOpacity onPress={() => setShowStartDatePicker(true)} style={styles.datePickerButton}>
           <Text style={styles.datePickerButtonText}>Start Date</Text>
           <Text style={styles.dateText}>{formattedDate(startDate)}</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => openDatePicker('end')} style={styles.datePickerButton}>
+        <TouchableOpacity onPress={() => setShowEndDatePicker(true)} style={styles.datePickerButton}>
           <Text style={styles.datePickerButtonText}>End Date</Text>
           <Text style={styles.dateText}>{formattedDate(endDate)}</Text>
         </TouchableOpacity>
       </View>
-      {showDatePicker && (
+      <Button onPress={clearDates} mode="outlined" style={styles.clearDatesButton}>
+        Clear Dates
+      </Button>
+      {showStartDatePicker && (
         <DateTimePicker
-          value={pickerMode === 'start' ? startDate || new Date() : endDate || new Date()}
+          value={startDate || new Date()}
           mode="date"
           display="default"
-          onChange={onDateChange}
+          onChange={onStartDateChange}
+        />
+      )}
+      {showEndDatePicker && (
+        <DateTimePicker
+          value={endDate || new Date()}
+          mode="date"
+          display="default"
+          onChange={onEndDateChange}
         />
       )}
       {loading ? (
@@ -306,6 +291,9 @@ const styles = StyleSheet.create({
   },
   cellText: {
     textAlign: 'center',
+  },
+  clearDatesButton: {
+    marginBottom: 10,
   },
 });
 

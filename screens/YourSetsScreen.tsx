@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useContext, useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Appbar, FAB } from 'react-native-paper';
 import SetsTable from '../components/SetsTable'; // Adjust the path as necessary
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useNavigation, RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../types';
+import { SetsContext } from '../context/setsContext';
 
 type YourSetsScreenRouteProp = RouteProp<RootStackParamList, 'YourSets'>;
 type YourSetsScreenNavigationProp = BottomTabNavigationProp<RootStackParamList, 'YourSets'>;
