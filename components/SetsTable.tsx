@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, ActivityIndicator } from 'react-native';
-import { TextInput, DataTable, IconButton, Snackbar } from 'react-native-paper';
+import { View, Text, StyleSheet, ScrollView, Image, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { DataTable, IconButton, Snackbar } from 'react-native-paper';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { getSets, getExercises, deleteSet } from '../utils/api';
+import dayjs from 'dayjs';
 
 const SetsTable = ({ exerciseId }) => {
   const [sets, setSets] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [pickerMode, setPickerMode] = useState('start');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [exercisesData, setExercisesData] = useState([]);
@@ -15,7 +19,7 @@ const SetsTable = ({ exerciseId }) => {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
-  const [sortCriteria, setSortCriteria] = useState('');
+  const [sortCriteria, setSortCriteria] = useState('createdAt');
   const [sortOrder, setSortOrder] = useState('desc');
 
   useEffect(() => {
@@ -52,8 +56,8 @@ const SetsTable = ({ exerciseId }) => {
     try {
       const { sets, totalPages } = await getSets(
         exerciseId,
-        startDate,
-        endDate,
+        startDate ? dayjs(startDate).format('YYYY-MM-DD') : '',
+        endDate ? dayjs(endDate).format('YYYY-MM-DD') : '',
         sortCriteria,
         sortOrder,
         page
@@ -93,6 +97,34 @@ const SetsTable = ({ exerciseId }) => {
     setPage(pageNumber);
   };
 
+  const openDatePicker = (mode) => {
+    setPickerMode(mode);
+    setShowDatePicker(true);
+  };
+
+  const onDateChange = (event, selectedDate) => {
+    setShowDatePicker(false);
+    if (selectedDate) {
+      if (pickerMode === 'start') {
+        setStartDate(selectedDate);
+      } else {
+        setEndDate(selectedDate);
+      }
+    }
+  };
+
+  const clearDate = (mode) => {
+    if (mode === 'start') {
+      setStartDate(null);
+    } else {
+      setEndDate(null);
+    }
+  };
+
+  const formattedDate = (date) => {
+    return date ? dayjs(date).format('MMMM D, YYYY') : 'Select Date';
+  };
+
   return (
     <View style={styles.container}>
       {selectedExercise && (
@@ -107,56 +139,74 @@ const SetsTable = ({ exerciseId }) => {
         </View>
       )}
       <View style={styles.datePickerContainer}>
-        <TextInput
-          label="Start Date"
-          value={startDate}
-          onChangeText={(text) => setStartDate(text)}
-          mode="outlined"
-          style={styles.datePicker}
-          keyboardType="numeric"
-        />
-        <TextInput
-          label="End Date"
-          value={endDate}
-          onChangeText={(text) => setEndDate(text)}
-          mode="outlined"
-          style={styles.datePicker}
-          keyboardType="numeric"
-        />
+        <TouchableOpacity onPress={() => openDatePicker('start')} style={styles.datePickerButton}>
+          <Text style={styles.datePickerButtonText}>Start Date</Text>
+          <Text style={styles.dateText}>{formattedDate(startDate)}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => openDatePicker('end')} style={styles.datePickerButton}>
+          <Text style={styles.datePickerButtonText}>End Date</Text>
+          <Text style={styles.dateText}>{formattedDate(endDate)}</Text>
+        </TouchableOpacity>
       </View>
+      {showDatePicker && (
+        <DateTimePicker
+          value={pickerMode === 'start' ? startDate || new Date() : endDate || new Date()}
+          mode="date"
+          display="default"
+          onChange={onDateChange}
+        />
+      )}
       {loading ? (
-        <ActivityIndicator size="large" color="#0000ff" />
+        <ActivityIndicator size="large" color="#0000ff" style={styles.loadingIndicator} />
       ) : (
-        <ScrollView horizontal={false}>
+        <ScrollView horizontal={true}>
           <DataTable style={styles.dataTable}>
             <DataTable.Header>
-              {!exerciseId && (<DataTable.Title>Exercise</DataTable.Title>)}
-              <DataTable.Title onPress={() => handleSort('reps')}>Reps</DataTable.Title>
-              <DataTable.Title onPress={() => handleSort('weight')}>Weight (kg)</DataTable.Title>
-              <DataTable.Title onPress={() => handleSort('createdAt')}>Date</DataTable.Title>
-              <DataTable.Title>Actions</DataTable.Title>
+              {!exerciseId && (<DataTable.Title style={styles.tableColumn}>Exercise</DataTable.Title>)}
+              <DataTable.Title style={styles.tableColumn} onPress={() => handleSort('reps')}>
+                Reps {sortCriteria === 'reps' && (
+                  <Text>{sortOrder === 'asc' ? '▲' : '▼'}</Text>
+                )}
+              </DataTable.Title>
+              <DataTable.Title style={styles.tableColumn} onPress={() => handleSort('weight')}>
+                Weight (kg) {sortCriteria === 'weight' && (
+                  <Text>{sortOrder === 'asc' ? '▲' : '▼'}</Text>
+                )}
+              </DataTable.Title>
+              <DataTable.Title style={styles.tableColumn} onPress={() => handleSort('createdAt')}>
+                Date {sortCriteria === 'createdAt' && (
+                  <Text>{sortOrder === 'asc' ? '▲' : '▼'}</Text>
+                )}
+              </DataTable.Title>
+              <DataTable.Title style={styles.tableColumn}>Actions</DataTable.Title>
             </DataTable.Header>
             {sets.map((set) => {
               const ex = findExerciseById(set.exercise);
               return (
                 <DataTable.Row key={set._id}>
                   {!exerciseId && (
-                    <DataTable.Cell>
-                      <View>
+                    <DataTable.Cell style={styles.tableColumn}>
+                      <View style={styles.exerciseInfo}>
                         {ex?.imageURL && (
                           <Image
                             source={{ uri: ex?.imageURL }}
                             style={styles.miniExerciseImage}
                           />
                         )}
-                        <Text>{ex?.name}</Text>
+                        <Text style={styles.cellText}>{ex?.name}</Text>
                       </View>
                     </DataTable.Cell>
                   )}
-                  <DataTable.Cell>{set.reps || '-'}</DataTable.Cell>
-                  <DataTable.Cell>{set.weight || '-'}</DataTable.Cell>
-                  <DataTable.Cell>{new Date(set.createdAt).toLocaleDateString()}</DataTable.Cell>
-                  <DataTable.Cell>
+                  <DataTable.Cell style={styles.tableColumn}>
+                    <Text style={styles.cellText}>{set.reps || '-'}</Text>
+                  </DataTable.Cell>
+                  <DataTable.Cell style={styles.tableColumn}>
+                    <Text style={styles.cellText}>{set.weight || '-'}</Text>
+                  </DataTable.Cell>
+                  <DataTable.Cell style={styles.tableColumn}>
+                    <Text style={styles.cellText}>{new Date(set.createdAt).toLocaleDateString()}</Text>
+                  </DataTable.Cell>
+                  <DataTable.Cell style={styles.tableColumn}>
                     <IconButton
                       icon="delete"
                       onPress={() => handleDelete(set._id)}
@@ -222,31 +272,40 @@ const styles = StyleSheet.create({
   },
   datePickerContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 10,
   },
-  datePicker: {
+  datePickerButton: {
     flex: 1,
     marginHorizontal: 5,
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 5,
+    alignItems: 'center',
   },
-  headerText: {
-    fontWeight: 'bold',
-    textAlign: 'center',
+  datePickerButtonText: {
+    fontSize: 16,
+    marginBottom: 5,
   },
-  headerCell: {
-    justifyContent: 'center',
+  dateText: {
+    fontSize: 16,
   },
-  dataCell: {
-    justifyContent: 'center',
+  loadingIndicator: {
+    marginTop: 20,
   },
   dataTable: {
     flex: 1,
     marginBottom: 20,
     marginTop: 10,
   },
-  flex1: {
-    flex: 1,
+  tableColumn: {
+    width: 120,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cellText: {
+    textAlign: 'center',
   },
 });
 

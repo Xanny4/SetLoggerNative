@@ -19,9 +19,8 @@ const Stack = createStackNavigator();
 // Stack Navigator for Exercises Tab
 const ExercisesStack = () => (
   <Stack.Navigator>
-    <Stack.Screen name="Exercises" component={ExercisesScreen} options={{ headerShown: false }} />
+    <Stack.Screen name="ExercisesStack" component={ExercisesScreen} options={{ headerShown: false }} />
     <Stack.Screen name="YourSets" component={YourSetsScreen} options={{title: ""}}/>
-    {/* Add more screens as needed */}
   </Stack.Navigator>
 );
 
@@ -51,7 +50,6 @@ const BottomNavigationBar: React.FC = () => {
       <Tab.Screen name="Exercises" component={ExercisesStack} options={{ title: 'Exercises' }} />
       <Tab.Screen name="YourSets" component={YourSetsScreen} options={{ title: 'Your Sets' }} />
       <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: 'Profile' }} />
-      {/* Tab.Screen for YourSetsScreen will be handled within ExercisesStack */}
     </Tab.Navigator>
   );
 };

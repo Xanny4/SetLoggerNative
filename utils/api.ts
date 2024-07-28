@@ -117,7 +117,7 @@ export const getExercises = async (): Promise<Exercise[] | undefined> => {
   }
 };
 
-export const createExercise = async (exercise: any): Promise<Exercise | undefined> => {
+export const createExercise = async (exercise: any): Promise<any> => {
   try {
     const token = await getToken();
     const response = await axios.post<Exercise>(

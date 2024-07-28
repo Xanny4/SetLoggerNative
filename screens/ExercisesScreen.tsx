@@ -1,18 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { View, FlatList, StyleSheet, Image, Alert } from 'react-native';
 import { TextInput, Button, Card, Modal, Portal, Provider } from 'react-native-paper';
-import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import * as ImagePicker from 'expo-image-picker';
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { getExercises, createExercise } from '../utils/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { FirebaseError } from 'firebase/app';
 import ExerciseCard from '../components/ExerciseCard';
-import { useNavigation } from '@react-navigation/native';
-import { RootStackParamList, Exercise } from '../types'; 
+import { Exercise } from '../types'; 
 import { storage } from '../utils/firebaseConfig';
-
-type ExercisesScreenNavigationProp = BottomTabNavigationProp<RootStackParamList, 'Exercises'>;
 
 const ExercisesScreen: React.FC = () => {
   const [exercises, setExercises] = useState<Exercise[]>([]);
@@ -21,8 +17,6 @@ const ExercisesScreen: React.FC = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [newExerciseName, setNewExerciseName] = useState('');
   const [newExerciseImage, setNewExerciseImage] = useState<string | null>(null);
-
-  const navigation = useNavigation<ExercisesScreenNavigationProp>();
 
   useEffect(() => {
     const fetchExercises = async () => {
@@ -50,8 +44,8 @@ const ExercisesScreen: React.FC = () => {
     const imageURL = await uploadImage(newExerciseImage);
     if (imageURL) {
       const newExercise = await createExercise({ name: newExerciseName, imageURL: imageURL });
-      setExercises([...exercises, newExercise]);
-      setFilteredExercises([...exercises, newExercise]);
+      setExercises([...exercises, newExercise.Exercise]);
+      setFilteredExercises([...exercises, newExercise.Exercise]);
       setNewExerciseName('');
       setNewExerciseImage(null);
       setIsModalVisible(false);
@@ -122,9 +116,11 @@ const ExercisesScreen: React.FC = () => {
         <FlatList
           data={filteredExercises}
           renderItem={({ item }) => (
-            <ExerciseCard exercise={item} />
+            <ExerciseCard key={ item._id} exercise={item} />
           )}
           keyExtractor={(item) => item._id}
+          numColumns={2} // Set the number of columns
+          columnWrapperStyle={styles.row} // Custom style for row
         />
         <Portal>
           <Modal visible={isModalVisible} onDismiss={() => setIsModalVisible(false)} contentContainerStyle={styles.modalContainer}>
@@ -156,11 +152,11 @@ const ExercisesScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
+    padding: 10,
   },
   searchBarContainer: {
     flexDirection: 'row',
-    marginBottom: 20,
+    marginBottom: 10,
   },
   searchBar: {
     flex: 1,
@@ -168,6 +164,9 @@ const styles = StyleSheet.create({
   },
   addButton: {
     alignSelf: 'center',
+  },
+  row: {
+    justifyContent: 'space-between',
   },
   modalContainer: {
     padding: 20,

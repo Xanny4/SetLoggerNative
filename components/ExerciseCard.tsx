@@ -1,6 +1,6 @@
 import React from 'react';
-import { TouchableOpacity, StyleSheet } from 'react-native';
-import { Card, Title, Paragraph } from 'react-native-paper';
+import { TouchableOpacity, StyleSheet, View, Text } from 'react-native';
+import { Card, Title } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { Exercise, RootStackParamList } from '../types';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
@@ -19,12 +19,19 @@ const ExerciseCard: React.FC<ExerciseCardProps> = ({ exercise }) => {
       onPress={() => navigation.navigate('YourSets', { exerciseId: exercise._id })} 
       style={styles.card}
     >
-      <Card>
-        <Card.Cover source={{ uri: exercise.imageURL }} />
-        <Card.Content>
-          <Title>{exercise.name}</Title>
-          <Paragraph>{exercise.name}</Paragraph>
-        </Card.Content>
+      <Card style={styles.cardContent}>
+        {exercise.imageURL ? (
+          <Card.Cover source={{ uri: exercise.imageURL }} style={styles.image} />
+        ) : (
+          <View >
+            <Text style={styles.noImageText}>{exercise.name}</Text>
+          </View>
+        )}
+        {exercise.imageURL && (
+          <Card.Content>
+            <Title style={styles.title}>{exercise.name}</Title>
+          </Card.Content>
+        )}
       </Card>
     </TouchableOpacity>
   );
@@ -32,7 +39,32 @@ const ExerciseCard: React.FC<ExerciseCardProps> = ({ exercise }) => {
 
 const styles = StyleSheet.create({
   card: {
-    marginBottom: 10,
+    flex: 1,
+    margin: 5,
+    maxWidth: '48%',
+    aspectRatio: 1,
+  },
+  cardContent: {
+    justifyContent: 'center',
+    height: '100%',
+  },
+  image: {
+    height: '70%',
+  },
+  noImageContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 10,
+  },
+  noImageText: {
+    fontSize: 18,
+    textAlign: 'center',
+    padding: 20,
+  },
+  title: {
+    textAlign: 'center',
+    fontSize: 14,
   },
 });
 
