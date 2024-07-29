@@ -1,19 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { View, ActivityIndicator } from 'react-native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { BottomTabNavigationProp, createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import LoginScreen from './screens/LoginScreen';
 import AddSetScreen from './screens/AddSetScreen';
 import ExercisesScreen from './screens/ExercisesScreen';
 import ProfileScreen from './screens/ProfileScreen';
-import YourSetsScreen from './screens/YourSetsScreen'; // Corrected import
+import YourSetsScreen from './screens/YourSetsScreen';
 
 import { MaterialIcons } from '@expo/vector-icons';
 import { PaperProvider } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, useNavigation} from '@react-navigation/native';
 
-import { SetsContext, SetsProvider } from './context/setsContext';
+import { SetsProvider } from './context/setsContext';
+import { ExerciseProvider } from './context/exerciseContext';
+import { RootStackParamList } from './types';
 
 
 const Tab = createBottomTabNavigator();
@@ -28,6 +30,7 @@ const ExercisesStack = () => (
 );
 
 const BottomNavigationBar: React.FC = () => {
+  const navigation = useNavigation<BottomTabNavigationProp<RootStackParamList>>();
   return (
     <Tab.Navigator
       initialRouteName="AddSet"
@@ -50,8 +53,16 @@ const BottomNavigationBar: React.FC = () => {
       })}
     >
       <Tab.Screen name="AddSet" component={AddSetScreen} options={{ title: 'Add Set' }} />
-      <Tab.Screen name="Exercises" component={ExercisesStack} options={{ title: 'Exercises' }} />
-      <Tab.Screen name="YourSets" component={YourSetsScreen} options={{ title: 'Your Sets' }} />
+      <Tab.Screen name="Exercises" component={ExercisesStack} options={{ title: 'Exercises' }} listeners={{
+        tabPress: (e) => {
+          navigation.navigate('Exercises');
+        }
+      }} />
+      <Tab.Screen name="YourSets" component={YourSetsScreen} options={{ title: 'Your Sets' }} listeners={{
+        tabPress: (e) => {
+          navigation.navigate('YourSets');
+        }
+      }} />
       <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: 'Profile' }} />
     </Tab.Navigator>
   );
@@ -87,6 +98,7 @@ const App: React.FC = () => {
   }
 
   return (
+    <ExerciseProvider>
     <SetsProvider>
     <NavigationContainer>
       <PaperProvider>
@@ -98,6 +110,8 @@ const App: React.FC = () => {
       </PaperProvider>
     </NavigationContainer>
     </SetsProvider>
+    </ExerciseProvider>
+
   );
 };
 

@@ -3,15 +3,12 @@ import { View, Text, StyleSheet, ScrollView, Image, ActivityIndicator, Touchable
 import { DataTable, IconButton, Snackbar, Button } from 'react-native-paper';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { getExercises, deleteSet } from '../utils/api';
-import dayjs from 'dayjs';
 import { SetsContext } from '../context/setsContext';
 
 const SetsTable = ({ exerciseId }) => {
   const [loading, setLoading] = useState(false);
   const [startDate, setStartDate] = useState(undefined);
   const [endDate, setEndDate] = useState(undefined);
-  const [showStartDatePicker, setShowStartDatePicker] = useState(false);
-  const [showEndDatePicker, setShowEndDatePicker] = useState(false);
   const [page, setPage] = useState(1);
   const [exercisesData, setExercisesData] = useState([]);
   const [selectedExercise, setSelectedExercise] = useState(null);
@@ -77,14 +74,12 @@ const SetsTable = ({ exerciseId }) => {
   };
 
   const onStartDateChange = (event, selectedDate) => {
-    setShowStartDatePicker(false);
     if (selectedDate) {
       setStartDate(selectedDate);
     }
   };
 
   const onEndDateChange = (event, selectedDate) => {
-    setShowEndDatePicker(false);
     if (selectedDate) {
       setEndDate(selectedDate);
     }
@@ -93,10 +88,6 @@ const SetsTable = ({ exerciseId }) => {
   const clearDates = () => {
     setStartDate(undefined);
     setEndDate(undefined);
-  };
-
-  const formattedDate = (date) => {
-    return date ? dayjs(date).format('MMMM D, YYYY') : 'Select Date';
   };
 
   return (
@@ -113,34 +104,30 @@ const SetsTable = ({ exerciseId }) => {
         </View>
       )}
       <View style={styles.datePickerContainer}>
-        <TouchableOpacity onPress={() => setShowStartDatePicker(true)} style={styles.datePickerButton}>
-          <Text style={styles.datePickerButtonText}>Start Date</Text>
-          <Text style={styles.dateText}>{formattedDate(startDate)}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => setShowEndDatePicker(true)} style={styles.datePickerButton}>
-          <Text style={styles.datePickerButtonText}>End Date</Text>
-          <Text style={styles.dateText}>{formattedDate(endDate)}</Text>
-        </TouchableOpacity>
+        <View style={styles.datePickerWrapper}>
+          <Text style={styles.datePickerLabel}>Start Date</Text>
+          <DateTimePicker
+            value={startDate || new Date()}
+            mode="date"
+            display="default"
+            onChange={onStartDateChange}
+            style={styles.datePicker}
+          />
+        </View>
+        <View style={styles.datePickerWrapper}>
+          <Text style={styles.datePickerLabel}>End Date</Text>
+          <DateTimePicker
+            value={endDate || new Date()}
+            mode="date"
+            display="default"
+            onChange={onEndDateChange}
+            style={styles.datePicker}
+          />
+        </View>
       </View>
       <Button onPress={clearDates} mode="outlined" style={styles.clearDatesButton}>
         Clear Dates
-      </Button>
-      {showStartDatePicker && (
-        <DateTimePicker
-          value={startDate || new Date()}
-          mode="date"
-          display="default"
-          onChange={onStartDateChange}
-        />
-      )}
-      {showEndDatePicker && (
-        <DateTimePicker
-          value={endDate || new Date()}
-          mode="date"
-          display="default"
-          onChange={onEndDateChange}
-        />
-      )}
+      </Button> 
       {loading ? (
         <ActivityIndicator size="large" color="#0000ff" style={styles.loadingIndicator} />
       ) : (
@@ -240,8 +227,8 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   exerciseImage: {
-    width: 200,
-    height: 200,
+    width: 50,
+    height: 50,
     resizeMode: 'cover',
     marginBottom: 10,
   },
@@ -260,21 +247,18 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 10,
   },
-  datePickerButton: {
-    flex: 1,
+  datePickerWrapper: {
     marginHorizontal: 5,
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 5,
-    alignItems: 'center',
+    alignItems: 'center', // Center the content horizontally
   },
-  datePickerButtonText: {
+  datePickerLabel: {
     fontSize: 16,
     marginBottom: 5,
+    alignSelf: 'center', // Align the label to the start of the container
   },
-  dateText: {
-    fontSize: 16,
+  datePicker: {
+    width: '100%',
+    alignSelf: 'flex-start'
   },
   loadingIndicator: {
     marginTop: 20,

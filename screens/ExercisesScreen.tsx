@@ -3,15 +3,16 @@ import { View, FlatList, StyleSheet, Image, Alert } from 'react-native';
 import { TextInput, Button, Card, Modal, Portal, Provider } from 'react-native-paper';
 import * as ImagePicker from 'expo-image-picker';
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { getExercises, createExercise } from '../utils/api';
+import { createExercise } from '../utils/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { FirebaseError } from 'firebase/app';
 import ExerciseCard from '../components/ExerciseCard';
 import { Exercise } from '../types'; 
 import { storage } from '../utils/firebaseConfig';
+import { useExerciseContext } from '../context/exerciseContext';
 
 const ExercisesScreen: React.FC = () => {
-  const [exercises, setExercises] = useState<Exercise[]>([]);
+  const { exercises, refreshExercises } = useExerciseContext();
   const [filteredExercises, setFilteredExercises] = useState<Exercise[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -19,20 +20,10 @@ const ExercisesScreen: React.FC = () => {
   const [newExerciseImage, setNewExerciseImage] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchExercises = async () => {
-      try {
-        const exercises: Exercise[] = await getExercises();
-        setExercises(exercises);
-        setFilteredExercises(exercises);
-      } catch (error) {
-        console.error('Error fetching exercises:', error);
-      }
-    };
-
-    fetchExercises();
-  }, []);
-
-  const handleSearch = (query: string) => {
+    console.log("ExercisesScreen: useEffect");
+    setFilteredExercises(exercises);
+  },[exercises]); 
+  const handleSearch = (query) => {
     setSearchQuery(query);
     const filtered = exercises.filter((exercise) =>
       exercise.name.toLowerCase().includes(query.toLowerCase())
@@ -43,9 +34,8 @@ const ExercisesScreen: React.FC = () => {
   const handleAddExercise = async () => {
     const imageURL = await uploadImage(newExerciseImage);
     if (imageURL) {
-      const newExercise = await createExercise({ name: newExerciseName, imageURL: imageURL });
-      setExercises([...exercises, newExercise.Exercise]);
-      setFilteredExercises([...exercises, newExercise.Exercise]);
+      await createExercise({ name: newExerciseName, imageURL: imageURL });
+      await refreshExercises();
       setNewExerciseName('');
       setNewExerciseImage(null);
       setIsModalVisible(false);

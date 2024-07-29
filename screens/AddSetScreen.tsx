@@ -1,16 +1,9 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, TextInput as RNTextInput } from 'react-native';
 import { TextInput, Button, Card, Snackbar } from 'react-native-paper';
-import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
-import { RootStackParamList } from '../types';
-import { addSet, getExercises } from '../utils/api';
+import { addSet } from '../utils/api';
 import { SetsContext } from '../context/setsContext';
-
-type AddSetScreenNavigationProp = BottomTabNavigationProp<RootStackParamList, 'AddSet'>;
-
-interface AddSetScreenProps {
-  navigation: AddSetScreenNavigationProp;
-}
+import { useExerciseContext } from '../context/exerciseContext';
 
 const CustomSearchbar = ({ value, onChangeText, onFocus, onBlur, onClear, image, error}) => (
   <View style={[styles.customSearchbar,  error && styles.errorBorder]}>
@@ -31,12 +24,14 @@ const CustomSearchbar = ({ value, onChangeText, onFocus, onBlur, onClear, image,
   </View>
 );
 
-const AddSetScreen: React.FC<AddSetScreenProps> = ({ navigation }) => {
+const AddSetScreen = ({ navigation }) => {
+  const { exercises } = useExerciseContext();
+  const { refreshSets } = useContext(SetsContext);
+
   const [exercise, setExercise] = useState('');
   const [weight, setWeight] = useState('');
   const [reps, setReps] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [exerciseList, setExerciseList] = useState([]);
   const [filteredExercises, setFilteredExercises] = useState([]);
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [snackbarVisible, setSnackbarVisible] = useState(false);
@@ -45,24 +40,11 @@ const AddSetScreen: React.FC<AddSetScreenProps> = ({ navigation }) => {
   const [highlightErrors, setHighlightErrors] = useState({ exercise: false, reps: false });
   const [selectedExerciseImage, setSelectedExerciseImage] = useState('');
 
-  const { refreshSets } = useContext(SetsContext);
-
-
-  useEffect(() => {
-    const fetchData = async () => {
-      const exercises = await getExercises();
-      setExerciseList(exercises);
-      setFilteredExercises(exercises);
-    };
-
-    fetchData();
-  }, []);
-
   useEffect(() => {
     setFilteredExercises(
-      exerciseList.filter(ex => ex.name.toLowerCase().includes(searchQuery.toLowerCase()))
+      exercises.filter(ex => ex.name.toLowerCase().includes(searchQuery.toLowerCase()))
     );
-  }, [searchQuery, exerciseList]);
+  }, [searchQuery, exercises]);
 
   const handleAddSet = async () => {
     Keyboard.dismiss(); 
@@ -75,7 +57,7 @@ const AddSetScreen: React.FC<AddSetScreenProps> = ({ navigation }) => {
 
     if (errors.exercise || errors.reps) {
       setSnackbarMessage('Please fill in all fields');
-      setSnackbarColor('#FF0000'); // Red color for error
+      setSnackbarColor('#FF0000');
       setSnackbarVisible(true);
       return;
     }
@@ -83,19 +65,18 @@ const AddSetScreen: React.FC<AddSetScreenProps> = ({ navigation }) => {
     const response = await addSet(exercise, reps, weight);
     if (response.status === 201) {
       setSnackbarMessage('Set added successfully!');
-      setSnackbarColor('#4B0082'); // Default color for success
+      setSnackbarColor('#4B0082');
       setSnackbarVisible(true);
-      // Clear fields after successful submission
       setExercise('');
       setWeight('');
       setReps('');
       setSearchQuery('');
       setSelectedExerciseImage('');
       setHighlightErrors({ exercise: false, reps: false });
-      refreshSets(); // Refresh the sets list in YourSetsScreen
+      refreshSets();
     } else {
       setSnackbarMessage('Failed to add set. Try again.');
-      setSnackbarColor('#FF0000'); // Red color for error
+      setSnackbarColor('#FF0000');
       setSnackbarVisible(true);
     }
   };
@@ -103,15 +84,15 @@ const AddSetScreen: React.FC<AddSetScreenProps> = ({ navigation }) => {
   const handleSelectExercise = (exercise) => {
     setExercise(exercise._id);
     setSearchQuery(exercise.name);
-    setSelectedExerciseImage(exercise.imageURL); // Set the selected exercise's image URL
+    setSelectedExerciseImage(exercise.imageURL);
     setDropdownVisible(false);
     setHighlightErrors(prev => ({ ...prev, exercise: false }));
-    Keyboard.dismiss(); // Dismiss keyboard when an exercise is selected
+    Keyboard.dismiss();
   };
 
   const onChangeSearch = (query) => {
     setSearchQuery(query);
-    const selectedExercise = exerciseList.find(ex => ex.name.toLowerCase() === query.toLowerCase());
+    const selectedExercise = exercises.find(ex => ex.name.toLowerCase() === query.toLowerCase());
     if (selectedExercise) {
       setExercise(selectedExercise._id);
       setSelectedExerciseImage(selectedExercise.imageURL);
@@ -137,9 +118,9 @@ const AddSetScreen: React.FC<AddSetScreenProps> = ({ navigation }) => {
             onFocus={() => setDropdownVisible(true)}
             onBlur={() => setDropdownVisible(false)}
             onClear={() => {
-              setExercise(''); // Clear exercise when X button is pressed
+              setExercise('');
               setSearchQuery('');
-              setSelectedExerciseImage(''); // Clear the selected exercise's image
+              setSelectedExerciseImage('');
               setHighlightErrors(prev => ({ ...prev, exercise: false }));
             }}
             image={selectedExerciseImage}
@@ -157,7 +138,7 @@ const AddSetScreen: React.FC<AddSetScreenProps> = ({ navigation }) => {
                 </TouchableOpacity>
               )}
               style={styles.dropdown}
-              keyboardShouldPersistTaps='handled' // Ensures the dropdown remains visible when tapping on it
+              keyboardShouldPersistTaps='handled'
             />
           )}
           <TextInput
