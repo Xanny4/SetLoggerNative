@@ -1,15 +1,16 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, ActivityIndicator } from 'react-native';
 import { DataTable, IconButton, Snackbar, Button } from 'react-native-paper';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { getExercises, deleteSet } from '../utils/api';
 import { SetsContext } from '../context/setsContext';
+import { useFocusEffect } from '@react-navigation/native';
 
 const SetsTable = ({ exerciseId }) => {
   const [loading, setLoading] = useState(false);
   const [startDate, setStartDate] = useState(undefined);
   const [endDate, setEndDate] = useState(undefined);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(0); // Pagination starts at 0
   const [exercisesData, setExercisesData] = useState([]);
   const [selectedExercise, setSelectedExercise] = useState(null);
   const [snackbarVisible, setSnackbarVisible] = useState(false);
@@ -19,11 +20,18 @@ const SetsTable = ({ exerciseId }) => {
 
   const { sets, totalPages, refreshSets } = useContext(SetsContext);
 
+  useFocusEffect(
+    React.useCallback(() => {
+      // Reset page number on focus
+      setPage(0);
+    }, [])
+  );
+
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        await refreshSets(exerciseId, startDate, endDate, sortCriteria, sortOrder, page);
+        await refreshSets(exerciseId, startDate, endDate, sortCriteria, sortOrder, page + 1);
         const exercises = await getExercises();
         setExercisesData(exercises);
       } catch (error) {
@@ -50,7 +58,7 @@ const SetsTable = ({ exerciseId }) => {
   const handleDelete = async (setId) => {
     try {
       await deleteSet(setId);
-      refreshSets(exerciseId, startDate, endDate, sortCriteria, sortOrder, page);
+      refreshSets(exerciseId, startDate, endDate, sortCriteria, sortOrder, page + 1);
       setSnackbarMessage('Set deleted successfully!');
       setSnackbarVisible(true);
     } catch (error) {
@@ -176,6 +184,9 @@ const SetsTable = ({ exerciseId }) => {
                     <Text style={styles.cellText}>{set.weight || '-'}</Text>
                   </DataTable.Cell>
                   <DataTable.Cell style={styles.tableColumn}>
+                    <>
+                    {console.log(set.createdAt)}
+                    </>
                     <Text style={styles.cellText}>{new Date(set.createdAt).toLocaleDateString()}</Text>
                   </DataTable.Cell>
                   <DataTable.Cell style={styles.tableColumn}>
@@ -195,7 +206,7 @@ const SetsTable = ({ exerciseId }) => {
         page={page}
         numberOfPages={totalPages}
         onPageChange={handlePageChange}
-        label={`Page ${page} of ${totalPages}`}
+        label={`Page ${page + 1} of ${totalPages}`}
         showFastPaginationControls
         numberOfItemsPerPage={5}
       />
@@ -249,16 +260,16 @@ const styles = StyleSheet.create({
   },
   datePickerWrapper: {
     marginHorizontal: 5,
-    alignItems: 'center', // Center the content horizontally
+    alignItems: 'center',
   },
   datePickerLabel: {
     fontSize: 16,
     marginBottom: 5,
-    alignSelf: 'center', // Align the label to the start of the container
+    alignSelf: 'center',
   },
   datePicker: {
     width: '100%',
-    alignSelf: 'flex-start'
+    alignSelf: 'flex-start',
   },
   loadingIndicator: {
     marginTop: 20,

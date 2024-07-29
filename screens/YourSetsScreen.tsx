@@ -18,10 +18,6 @@ interface Props {
 const YourSetsScreen: React.FC<Props> = ({ route, navigation }) => {
   const { exerciseId } = route.params || {};
 
-  // Debugging log to check if exerciseId is being passed correctly
-  console.log("YourSetsScreen");
-  console.log('exerciseId:', exerciseId);
-
   return (
     <View style={styles.container}>
       <View style={styles.content}>
