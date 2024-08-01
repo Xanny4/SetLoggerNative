@@ -10,6 +10,8 @@ export const ExerciseProvider = ({ children }) => {
     const refreshExercises = async () => {
         try {
             const fetchedExercises = await getExercises();
+            //PRINT NAMES OF EXERCISES
+            fetchedExercises.forEach(exercise => console.log(exercise.name));
             setExercises(fetchedExercises);
         } catch (error) {
             console.error('Error fetching exercises:', error);

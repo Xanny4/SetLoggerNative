@@ -3,7 +3,7 @@ import { View, FlatList, StyleSheet, Image, Alert } from 'react-native';
 import { TextInput, Button, Card, Modal, Portal, Provider } from 'react-native-paper';
 import * as ImagePicker from 'expo-image-picker';
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { createExercise } from '../utils/api';
+import { createExercise, searchExercises, getExercises } from '../utils/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { FirebaseError } from 'firebase/app';
 import ExerciseCard from '../components/ExerciseCard';
@@ -20,28 +20,26 @@ const ExercisesScreen: React.FC = () => {
   const [newExerciseImage, setNewExerciseImage] = useState<string | null>(null);
 
   useEffect(() => {
-    console.log("ExercisesScreen: useEffect");
     setFilteredExercises(exercises);
-  },[exercises]); 
-  const handleSearch = (query) => {
+  }, [exercises]); 
+
+  const handleSearch = async (query: string) => {
     setSearchQuery(query);
-    const filtered = exercises.filter((exercise) =>
-      exercise.name.toLowerCase().includes(query.toLowerCase())
-    );
-    setFilteredExercises(filtered);
+    if (query.trim() === '') {
+      setFilteredExercises(exercises);
+    } else {
+      const results = await searchExercises(query);
+      if (results) setFilteredExercises(results.exercises);
+    }
   };
 
   const handleAddExercise = async () => {
-    const imageURL = await uploadImage(newExerciseImage);
-    if (imageURL) {
-      await createExercise({ name: newExerciseName, imageURL: imageURL });
-      await refreshExercises();
-      setNewExerciseName('');
-      setNewExerciseImage(null);
-      setIsModalVisible(false);
-    } else {
-      Alert.alert('Error', 'Failed to upload image');
-    }
+    const imageURL = newExerciseImage ? await uploadImage(newExerciseImage) : null;
+    await createExercise({ name: newExerciseName, imageURL: imageURL });
+    await refreshExercises();
+    setNewExerciseName('');
+    setNewExerciseImage(null);
+    setIsModalVisible(false);
   };
 
   const pickImage = async () => {
@@ -106,7 +104,7 @@ const ExercisesScreen: React.FC = () => {
         <FlatList
           data={filteredExercises}
           renderItem={({ item }) => (
-            <ExerciseCard key={ item._id} exercise={item} />
+            <ExerciseCard key={item._id} exercise={item} />
           )}
           keyExtractor={(item) => item._id}
           numColumns={2} // Set the number of columns

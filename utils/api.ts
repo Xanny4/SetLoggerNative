@@ -19,6 +19,11 @@ type CreateUserResponse = {
   message: string;
 }
 
+type SearchExercisesResponse = {
+  exercises: Exercise[];
+  totalPages: number;
+};
+
 const API_URL = process.env.API_URL;
 
 const getToken = async (): Promise<string> => {
@@ -260,6 +265,25 @@ export const createUser = async (username: string, email: string, password: stri
       console.error('Error Creating user:', error);
     }
     throw error;
+  }
+};
+
+export const searchExercises = async (query: string): Promise<SearchExercisesResponse | undefined> => {
+  try {
+    const token = await getToken();
+    const response = await axios.get<SearchExercisesResponse>(`${API_URL}/exercises/search`, {
+      params: { name: query },
+      headers: {
+        authorization: token,
+      },
+    });
+    return response.data;
+  } catch (error: any) {
+    if (error.response?.status === 401) {
+      if (await AsyncStorage.getItem('token')) await AsyncStorage.removeItem('token');
+      return;
+    }
+    console.error('Error searching exercises:', error);
   }
 };
 

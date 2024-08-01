@@ -165,7 +165,7 @@ const SetsTable = ({ exerciseId }) => {
               return (
                 <DataTable.Row key={set._id}>
                   {!exerciseId && (
-                    <DataTable.Cell style={styles.tableColumn}>
+                    <DataTable.Cell style={{width: 120}}>
                       <View style={styles.exerciseInfo}>
                         {ex?.imageURL && (
                           <Image
@@ -184,9 +184,6 @@ const SetsTable = ({ exerciseId }) => {
                     <Text style={styles.cellText}>{set.weight || '-'}</Text>
                   </DataTable.Cell>
                   <DataTable.Cell style={styles.tableColumn}>
-                    <>
-                    {console.log(set.createdAt)}
-                    </>
                     <Text style={styles.cellText}>{new Date(set.createdAt).toLocaleDateString()}</Text>
                   </DataTable.Cell>
                   <DataTable.Cell style={styles.tableColumn}>
@@ -252,6 +249,7 @@ const styles = StyleSheet.create({
   exerciseInfo: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'flex-start',
   },
   datePickerContainer: {
     flexDirection: 'row',

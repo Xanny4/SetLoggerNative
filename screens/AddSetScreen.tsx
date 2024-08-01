@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, TextInput as RNTextInput } from 'react-native';
 import { TextInput, Button, Card, Snackbar } from 'react-native-paper';
-import { addSet } from '../utils/api';
+import { addSet, searchExercises } from '../utils/api';
 import { SetsContext } from '../context/setsContext';
 import { useExerciseContext } from '../context/exerciseContext';
 
-const CustomSearchbar = ({ value, onChangeText, onFocus, onBlur, onClear, image, error}) => (
-  <View style={[styles.customSearchbar,  error && styles.errorBorder]}>
+const CustomSearchbar = ({ value, onChangeText, onFocus, onBlur, onClear, image, error }) => (
+  <View style={[styles.customSearchbar, error && styles.errorBorder]}>
     {image && <Image source={{ uri: image }} style={styles.customSearchbarImage} />}
     <RNTextInput
       style={styles.customSearchbarInput}
@@ -41,14 +41,24 @@ const AddSetScreen = ({ navigation }) => {
   const [selectedExerciseImage, setSelectedExerciseImage] = useState('');
 
   useEffect(() => {
-    setFilteredExercises(
-      exercises.filter(ex => ex.name.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
-  }, [searchQuery, exercises]);
+    const fetchExercises = async () => {
+      if (searchQuery.trim() === '') {
+        setFilteredExercises(exercises);
+        return;
+      }
+
+      const response = await searchExercises(searchQuery);
+      if (response) {
+        setFilteredExercises(response.exercises);
+      }
+    };
+
+    fetchExercises();
+  }, [searchQuery]);
 
   const handleAddSet = async () => {
     Keyboard.dismiss(); 
-    
+
     const errors = {
       exercise: !exercise,
       reps: !reps,
@@ -81,10 +91,10 @@ const AddSetScreen = ({ navigation }) => {
     }
   };
 
-  const handleSelectExercise = (exercise) => {
-    setExercise(exercise._id);
-    setSearchQuery(exercise.name);
-    setSelectedExerciseImage(exercise.imageURL);
+  const handleSelectExercise = (selectedExercise) => {
+    setExercise(selectedExercise._id);
+    setSearchQuery(selectedExercise.name);
+    setSelectedExerciseImage(selectedExercise.imageURL);
     setDropdownVisible(false);
     setHighlightErrors(prev => ({ ...prev, exercise: false }));
     Keyboard.dismiss();
@@ -92,14 +102,6 @@ const AddSetScreen = ({ navigation }) => {
 
   const onChangeSearch = (query) => {
     setSearchQuery(query);
-    const selectedExercise = exercises.find(ex => ex.name.toLowerCase() === query.toLowerCase());
-    if (selectedExercise) {
-      setExercise(selectedExercise._id);
-      setSelectedExerciseImage(selectedExercise.imageURL);
-    } else {
-      setExercise('');
-      setSelectedExerciseImage('');
-    }
     setDropdownVisible(true);
   };
 
